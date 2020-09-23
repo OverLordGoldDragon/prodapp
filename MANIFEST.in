@@ -1,0 +1,6 @@
+include README.md
+include LICENSE
+include requirements.txt
+include prodapp/config.ini
+include prodapp/sounds/*
+include prodapp/static/*
