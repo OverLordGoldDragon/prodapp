@@ -8,11 +8,12 @@ from time import sleep
 
 class AppState():
     def __init__(self, savepath='auto', loadpath='auto', imsavepath='auto',
-                 read_only=False):
+                 read_only=False, is_exe=False):
         self.savepath=savepath if not read_only else None
         self.loadpath=loadpath
         self.imsavepath=imsavepath if not read_only else None
         self.read_only=read_only
+        self.is_exe=is_exe
 
         self.hour = ("12AM 1AM 2AM 3AM 4AM 5AM 6AM 7AM 8AM 9AM 10AM 11AM "
                      "12PM 1PM 2PM 3PM 4PM 5PM 6PM 7PM 8PM 9PM 10PM 11PM").split()
@@ -88,18 +89,24 @@ class AppState():
             self.__init__(savepath='auto', loadpath='auto', imsavepath='auto')
 
     def _init_logging(self):
+        # if .exe, default paths to one directory level above .exe's
+        # to where the shortcut is
+        dir_if = lambda x: os.path.dirname(x) if self.is_exe else x
+
         if self.savepath == 'auto':
-            if not os.path.isdir('data'):
-                os.mkdir('data')
-                print("Created log directory:", os.path.join(os.getcwd(), 'data'))
+            path = os.path.join(dir_if(os.getcwd()), 'data')
+            if not os.path.isdir(path):
+                os.mkdir(path)
+                print("Created log directory:", path)
             name = self.date.replace(',', ' -') + '.csv'
-            self.savepath = os.path.join(os.getcwd(), 'data', name)
+            self.savepath = os.path.join(path, name)
 
         if self.imsavepath in {None, 'auto'}:
-            if not os.path.isdir('images'):
-                os.mkdir('images')
+            path = os.path.join(dir_if(os.getcwd()), 'images')
+            if not os.path.isdir(path):
+                os.mkdir(path)
             name = self.date.replace(',', ' -') + '.png'
-            self.imsavepath = os.path.join(os.getcwd(), 'images', name)
+            self.imsavepath = os.path.join(path, name)
 
         if self.loadpath is not None:
             if self.loadpath == 'auto':

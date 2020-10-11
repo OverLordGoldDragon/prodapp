@@ -1,7 +1,21 @@
 # -*- coding: utf-8 -*-
 # http://127.0.0.1:8050/
 import os
-import argparse
+cfgpath = '../config.ini' if os.path.isfile('../config.ini') else 'config.ini'
+#%%# Pre-script checks, debug logger #########################################
+clock_x = '82%'  # default
+with open(cfgpath, 'r') as f:
+    txt = [line.strip(' \n') for line in f.read().split('\n')]
+    for line in txt:
+        # if debug_logs=1, create (and clear existing) and stream logs to .txt
+        if line.startswith('debug_logs') and line.split('=')[-1] == '1':
+            import sys
+            sys.stdout = open('stdout.txt', 'w')
+            sys.stderr = open('stderr.txt', 'w')
+        # countdown timer horizontal position relative to left edge of GUI
+        if line.startswith('clock_x'):
+            clock_x = line.split('=')[-1] + '%'
+#%%###########################################################################
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
@@ -25,7 +39,7 @@ def interpolate_index(self, **kwargs):
     kwargs['title'] = 'ProdApp'
     return dash.Dash.interpolate_index(self, **kwargs)
 app.interpolate_index = interpolate_index.__get__(app)
-#%%
+#%%###########################################################################
 btn0 = dict(className='playbtn', n_clicks=0)
 btn1 = dict(className='playbtn', n_clicks=0,
             style={'position': 'absolute', 'left': '35%', 'top': '62%'})
@@ -50,7 +64,7 @@ graphDiv = Div(
     ],
 )
 ctdDiv = Div(
-    style={'position': 'absolute', 'top': '65%', 'left': '82%'},
+    style={'position': 'absolute', 'top': '65%', 'left': clock_x},
     children=[
         Div(className='clockContainer',
             style={'top': '50%', 'width': '200px', 'height': '200px'},
@@ -120,7 +134,7 @@ xaxes_cfg = dict(
 )
 yaxes_cfg = xaxes_cfg.copy()
 del yaxes_cfg['tickfont']
-#%%
+#%%###########################################################################
 def get_data_objects():
     return [go.Bar(x=state.hour, y=state.super_productivity,
                    name='SuperProductivity'),
@@ -190,31 +204,38 @@ def static_file(path):
     return send_from_directory(static_folder, path)
 #%%# Execution ###############################################################
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Run productivity app.")
-    parser.add_argument('--savepath', default='auto',
-                        help="Path (.csv) to save app data to.")
-    parser.add_argument('--loadpath', default='auto',
-                        help="Path (.csv) to load app data from.")
-    parser.add_argument('--imsavepath', default='auto',
-                        help="Path (.png) to save app figure to.")
-    parser.add_argument('--read-only', action='store_true',
-                        help=("Run app in read-only mode (cannot save / update "
-                              "loaded file, if any)"))
+    args = dict(  # defaults
+        savepath='auto',
+        loadpath='auto',
+        imsavepath='auto',
+        t_max=600,
+        t_min=0,
+        bleeps=2,
+        port_url="http://127.0.0.1:8050/",
+        read_only=0,
+    )
+    with open(cfgpath, 'r') as f:
+        txt = [line.strip(' \n') for line in f.read().split('\n') if line != '']
+        txt = txt[:[line[:1] == '#' for line in txt].index(True)]  # drop comments
+        args.update(dict(line.split('=') for line in txt))
 
-    args = parser.parse_args()
-    state = AppState(**vars(args))
+    for k, v in args.items():
+        if k in "t_max t_min bleeps".split():  # numeric
+            args[k] = int(v)
+        if k in "read_only is_exe".split():  # boolean
+            args[k] = bool(v == '1')
+        if k in "savepath loadpath imsavepath".split():  # path
+            args[k] = v.strip("\"'")
 
-    # read configs to set in Countdown
-    t_max, t_min, bleeps = 600, 0, 2  # defaults
-    with open('config.ini', 'r') as f:
-        txt = [line.strip(' \n') for line in f.read().split('\n')]
-        for line in txt:
-            if line.startswith('t_max'):
-                t_max  = int(line.split('=')[-1])
-            elif line.startswith('t_min'):
-                t_min  = int(line.split('=')[-1])
-            elif line.startswith('bleeps'):
-                bleeps = int(line.split('=')[-1])
+    state_args = {name: args[name] for name in
+                  "savepath loadpath imsavepath read_only is_exe".split()}
+    state = AppState(**state_args)
+    countdown_args = {name: args[name] for name in
+                      "t_max t_min bleeps".split()}
+    ctd = Countdown(**countdown_args)
 
-    ctd = Countdown(t_max=t_max, t_min=t_min, bleeps=bleeps)
+    if args['port_url'] != '':
+        import webbrowser
+        webbrowser.open(args['port_url'])
+
     app.run_server(debug=False)
