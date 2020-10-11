@@ -7,11 +7,11 @@ from time import sleep
 
 
 class AppState():
-    def __init__(self, savepath='auto', loadpath='auto', imsavepath='auto',
+    def __init__(self, savedir='auto', loaddir='auto', imsavedir='auto',
                  read_only=False, is_exe=False):
-        self.savepath=savepath if not read_only else None
-        self.loadpath=loadpath
-        self.imsavepath=imsavepath if not read_only else None
+        self.savedir=savedir if not read_only else None
+        self.loaddir=loaddir
+        self.imsavedir=imsavedir if not read_only else None
         self.read_only=read_only
         self.is_exe=is_exe
 
@@ -61,7 +61,7 @@ class AppState():
             return
         self._reinit_if_day_differs()
 
-        with open(path or self.savepath, 'w', newline='') as f:
+        with open(path or self._savepath, 'w', newline='') as f:
             writer = csv.writer(f)
             writer.writerow(['prod', 'super_prod', self.date])
             for p, sp in zip(self.productivity, self.super_productivity):
@@ -74,7 +74,7 @@ class AppState():
                     ).strftime('%B %d, %Y')
 
     def load(self, path=None):
-        with open(path or self.loadpath, 'r') as f:
+        with open(path or self._loadpath, 'r') as f:
             rows = list(csv.reader(f))
         self.date = rows.pop(0)[-1]
         self.productivity, self.super_productivity = [  # rip readability
@@ -86,32 +86,35 @@ class AppState():
             print(("WARNING: app start date and current date differ; will create "
                    "new .csv to log to.\nApp started: {}\nToday is:    {}"
                    ).format(self.date, self._get_date()))
-            self.__init__(savepath='auto', loadpath='auto', imsavepath='auto')
+            self.__init__(savedir=self.savedir,
+                          loaddir=self.loaddir,
+                          imsavedir=self.imsavedir)
 
     def _init_logging(self):
         # if .exe, default paths to one directory level above .exe's
         # to where the shortcut is
         dir_if = lambda x: os.path.dirname(x) if self.is_exe else x
 
-        if self.savepath == 'auto':
-            path = os.path.join(dir_if(os.getcwd()), 'data')
-            if not os.path.isdir(path):
-                os.mkdir(path)
-                print("Created log directory:", path)
-            name = self.date.replace(',', ' -') + '.csv'
-            self.savepath = os.path.join(path, name)
+        if self.savedir == 'auto':
+            self.savedir = os.path.join(dir_if(os.getcwd()), 'data')
+        if not os.path.isdir(self.savedir):
+            os.mkdir(self.savedir)
+            print("Created log directory:", self.savedir)
+        name = self.date.replace(',', ' -') + '.csv'
+        self._savepath = os.path.join(self.savedir, name)
 
-        if self.imsavepath in {None, 'auto'}:
-            path = os.path.join(dir_if(os.getcwd()), 'images')
-            if not os.path.isdir(path):
-                os.mkdir(path)
-            name = self.date.replace(',', ' -') + '.png'
-            self.imsavepath = os.path.join(path, name)
+        if self.imsavedir in {None, 'auto'}:
+            self.imsavedir = os.path.join(dir_if(os.getcwd()), 'images')
+        if not os.path.isdir(self.imsavedir):
+            os.mkdir(self.imsavedir)
+        name = self.date.replace(',', ' -') + '.png'
+        self._imsavepath = os.path.join(self.imsavedir, name)
 
-        if self.loadpath is not None:
-            if self.loadpath == 'auto':
-                self.loadpath = self.savepath
-            if not os.path.isfile(self.loadpath):
+        if self.loaddir is not None:
+            if self.loaddir == 'auto':
+                self.loaddir = self.savedir
+            self._loadpath = self._savepath
+            if not os.path.isfile(self._savepath):
                 self.save()
             self.load()
 

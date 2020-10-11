@@ -158,9 +158,9 @@ def update_prod(cl5, cl10, cl15):
     fig.update_xaxes(**xaxes_cfg)
     fig.update_yaxes(**yaxes_cfg)
 
-    if state.savepath is not None:
+    if state._savepath is not None:
         state.save()
-        fig.write_image(state.imsavepath)
+        fig.write_image(state._imsavepath)
     return fig
 #%%# Countdown callbacks #####################################################
 @app.callback([Output('clockOutput', 'children'),
@@ -205,9 +205,9 @@ def static_file(path):
 #%%# Execution ###############################################################
 if __name__ == '__main__':
     args = dict(  # defaults
-        savepath='auto',
-        loadpath='auto',
-        imsavepath='auto',
+        savedir='auto',
+        loaddir='auto',
+        imsavedir='auto',
         t_max=600,
         t_min=0,
         bleeps=2,
@@ -224,11 +224,11 @@ if __name__ == '__main__':
             args[k] = int(v)
         if k in "read_only is_exe".split():  # boolean
             args[k] = bool(v == '1')
-        if k in "savepath loadpath imsavepath".split():  # path
+        if k in "savedir loaddir imsavedir".split():  # path
             args[k] = v.strip("\"'")
 
     state_args = {name: args[name] for name in
-                  "savepath loadpath imsavepath read_only is_exe".split()}
+                  "savedir loaddir imsavedir read_only is_exe".split()}
     state = AppState(**state_args)
     countdown_args = {name: args[name] for name in
                       "t_max t_min bleeps".split()}
