@@ -38,7 +38,7 @@ Recover/edit data for reference or further processing
 
 ## Installation
 
-`pip install prodapp`
+Use [.exe installer](https://github.com/OverLordGoldDragon/prodapp/releases/tag/0.8.1). For the Python package (not needed for `.exe`), `pip install prodapp`
 
 ## Usage
 
