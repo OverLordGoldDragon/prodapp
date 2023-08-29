@@ -66,6 +66,9 @@ Edit [prodapp/config.ini](prodapp/config.ini)
  3. **Save data/image**: add productivity (+5/10/15), saves automatically.
  4. **Change timer reset value**: either via configs (requires app restart), or: first click reset, then change time value (e.g. to 12:00); that'll be the new reset.
 
+### Note
+
+Latest version, with `savedir`, `loaddir`, and `imsavedir`, is **not** what the `.exe` installs. To make it work, run the `.exe`, then in `dist/`, replace `app.py` and `app_state.py` with files from the latest repository, _and_ rename `savepath`, `loadpath`, and `imsavepath` (note, they're `*path`, not `*dir`) in `config.ini`. This allows setting custom output directories, whereas `*path`-based configs require updating said configs daily.
 
 ## To-do
 
